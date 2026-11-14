@@ -14,8 +14,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       bash bison build-essential bzip2 ca-certificates clang cmake curl diffutils flex gawk git gnupg gzip \
-      openjdk-17-jdk-headless lld ninja-build npm patch pkg-config powershell python3 python3-pip python3-venv \
-      tar unzip wget xz-utils zip \
+      openjdk-17-jdk-headless lld ninja-build npm patch pkg-config python3 python3-pip python3-venv \
+      software-properties-common tar unzip wget xz-utils zip \
+    && wget -q https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb \
+    && dpkg -i /tmp/packages-microsoft-prod.deb \
+    && apt-get update && apt-get install -y --no-install-recommends powershell \
     && wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 21 \
     && curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
