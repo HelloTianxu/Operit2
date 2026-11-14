@@ -55,7 +55,7 @@ jobs:
       RUSTFLAGS: -Awarnings
       RUST_TOOLCHAIN_VERSION: 1.95.0
       FVM_VERSION: 4.3.0
-      OPERIT_LIBCLANG_DIR: /usr/lib/llvm-18/lib
+      OPERIT_LIBCLANG_DIR: /usr/lib/llvm-21/lib
     steps:
       - uses: actions/checkout@v4
       - name: Download previously built Android runtime
@@ -88,15 +88,33 @@ jobs:
       - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential clang cmake ninja-build libclang-dev lld python3-venv
+          sudo apt-get install -y build-essential clang cmake ninja-build lld python3-venv wget gnupg
+          wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 21
           python3 -m venv .venv
           npm install --global typescript@5.9.3
           corepack enable pnpm
           cd plugins/packages/buildin/workflow
           corepack pnpm install --frozen-lockfile
-      - name: Build unsigned release APK
+      - name: Prepare temporary Android signing
         run: |
-          python3 tools/build_scripts/build_flutter_android.py --build-name 2.0.0 --build-number 41 --skip-signing
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/operit-debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          cat > apps/flutter/app/android/local.properties <<EOF
+          flutter.sdk=$(cd apps/flutter/app/.fvm/flutter_sdk && pwd)
+          RELEASE_STORE_FILE=$RUNNER_TEMP/operit-debug.keystore
+          RELEASE_STORE_PASSWORD=android
+          RELEASE_KEY_ALIAS=androiddebugkey
+          RELEASE_KEY_PASSWORD=android
+          EOF
+      - name: Build debug-signed release APK
+        run: |
+          mkdir -p tools/release/secrets
+          cat > tools/release/secrets/android-signing.properties <<EOF
+          RELEASE_STORE_FILE=$RUNNER_TEMP/operit-debug.keystore
+          RELEASE_STORE_PASSWORD=android
+          RELEASE_KEY_ALIAS=androiddebugkey
+          RELEASE_KEY_PASSWORD=android
+          EOF
+          python3 tools/build_scripts/build_flutter_android.py --build-name 2.0.0 --build-number 41
       - uses: actions/upload-artifact@v4
         with:
           name: operit2-installable-apk
