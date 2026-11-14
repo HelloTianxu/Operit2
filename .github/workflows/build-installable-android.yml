@@ -55,6 +55,7 @@ jobs:
       RUSTFLAGS: -Awarnings
       RUST_TOOLCHAIN_VERSION: 1.95.0
       FVM_VERSION: 4.3.0
+      OPERIT_LIBCLANG_DIR: /usr/lib/llvm-18/lib
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -84,7 +85,7 @@ jobs:
       - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential clang cmake ninja-build libclang-21-dev lld
+          sudo apt-get install -y build-essential clang cmake ninja-build libclang-dev lld
           corepack enable pnpm
           cd plugins/packages/buildin/workflow
           corepack pnpm install --frozen-lockfile
