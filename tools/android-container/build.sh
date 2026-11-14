@@ -45,6 +45,7 @@ source_root="/tmp/operit2-android-source"
   -e OPERIT_ANDROID_V8_LLVM=/usr/lib/llvm-21 \
   -w /tmp \
   "$image" bash -lc '
+    set +e
     rm -rf /work
     mkdir -p /work
     tar -C /tmp/operit2-android-source \
@@ -68,7 +69,11 @@ source_root="/tmp/operit2-android-source"
     ln -s /cache/android-v8 /work/tools/release/work/android-v8
     cd /work
     bash tools/android-container/build-inside.sh
-    cp -f tools/release/dist/*.apk /output-dist/
+    build_status=$?
+    if compgen -G "tools/release/dist/*.apk" >/dev/null; then
+      cp -f tools/release/dist/*.apk /output-dist/
+    fi
+    exit "$build_status"
   '
 
 printf 'APK output:\n'

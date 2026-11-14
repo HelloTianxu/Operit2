@@ -374,8 +374,10 @@ def find_libclang():
     configured = (Path(os.environ["OPERIT_LIBCLANG_DIR"])
                   if "OPERIT_LIBCLANG_DIR" in os.environ else None)
     if configured:
-        expected = "libclang.dll" if IS_WINDOWS else "libclang.so"
-        if (configured / expected).is_file() or (not IS_WINDOWS and list(configured.glob("libclang.so*"))):
+        expected = "libclang.dll" if IS_WINDOWS else "libclang shared library"
+        linux_libraries = (list(configured.glob("libclang.so*")) +
+                           list(configured.glob("libclang-[0-9]*.so*")))
+        if (IS_WINDOWS and (configured / "libclang.dll").is_file()) or (not IS_WINDOWS and linux_libraries):
             return configured
         raise RuntimeError(f"OPERIT_LIBCLANG_DIR has no {expected}: {configured}")
     if IS_WINDOWS:
