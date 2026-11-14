@@ -5,8 +5,18 @@ export PATH="/opt/flutter/bin:/opt/pub-cache/bin:/opt/cargo/bin:/opt/android-sdk
 
 python3 -m venv .venv
 dart pub global activate fvm 4.3.0 >/dev/null
+export FVM_CACHE_PATH="${FVM_CACHE_PATH:-/opt/fvm-cache}"
+flutter_version='3.41.10-ohos-0.0.2-beta.operit.9'
+flutter_sdk="$FVM_CACHE_PATH/versions/$flutter_version"
+if [[ ! -x "$flutter_sdk/bin/flutter" || ! -x "$flutter_sdk/bin/cache/dart-sdk/bin/dart" ]]; then
+  (cd apps/flutter/app && fvm install --skip-pub-get)
+fi
+mkdir -p apps/flutter/app/.fvm
+ln -sfn "$flutter_sdk" apps/flutter/app/.fvm/flutter_sdk
+export OPERIT_SKIP_FVM_PREPARE=1
 npm install --global typescript@5.9.3 >/dev/null
 corepack enable
+pnpm config set store-dir "${PNPM_STORE_DIR:-/opt/pnpm-store}"
 
 mkdir -p apps/flutter/app/android/app/src/main/jniLibs/arm64-v8a
 mkdir -p apps/flutter/app/android/app/src/main/assets/android-runtime/arm64-v8a
@@ -25,7 +35,7 @@ if [[ ! -s apps/flutter/app/android/app/src/main/assets/android-runtime/arm64-v8
 fi
 
 cd plugins/packages/buildin/workflow
-corepack pnpm install --frozen-lockfile
+corepack pnpm install --frozen-lockfile --prefer-offline
 cd /work
 
 if [[ ! -f tools/release/work/android-container-debug.keystore ]]; then
