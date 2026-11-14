@@ -2,6 +2,9 @@
 set -euo pipefail
 
 export PATH="/opt/flutter/bin:/opt/pub-cache/bin:/opt/cargo/bin:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/usr/lib/llvm-21/bin:$PATH"
+# Linux V8 host compilation intentionally uses Chromium's hermetic Clang.
+# The system LLVM 21 installation remains the bindgen/libclang provider.
+unset OPERIT_ANDROID_V8_LLVM
 
 python3 -m venv .venv
 dart pub global activate fvm 4.3.0 >/dev/null

@@ -59,7 +59,6 @@ fi
   -e PNPM_STORE_DIR=/opt/pnpm-store \
   -e OPERIT_FLUTTER_CACHE=/opt/flutter-cache \
   -e OPERIT_LIBCLANG_DIR=/usr/lib/llvm-21/lib \
-  -e OPERIT_ANDROID_V8_LLVM=/usr/lib/llvm-21 \
   -w /tmp \
   "$image" bash -lc '
     set +e
