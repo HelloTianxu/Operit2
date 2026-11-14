@@ -145,6 +145,7 @@ node_modules/
 **/.vite/
 **/.rollup.cache/
 **/npm-debug.log*
+**/.pnpm-store/
 **/yarn-debug.log*
 **/yarn-error.log*
 **/pnpm-debug.log*
