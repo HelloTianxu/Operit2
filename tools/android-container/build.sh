@@ -28,7 +28,7 @@ run_proxy_env=()
 if [[ "${OPERIT_USE_MBP_PROXY:-0}" == 1 ]]; then
   "$HOME/.local/bin/mbp-proxy" on >/dev/null
   run_network_args=(--network host)
-  run_proxy_env=(-e 'ALL_PROXY=socks5h://127.0.0.1:17890' -e 'HTTPS_PROXY=socks5h://127.0.0.1:17890' -e 'HTTP_PROXY=socks5h://127.0.0.1:17890' -e 'NO_PROXY=localhost,127.0.0.1,::1')
+  run_proxy_env=(-e 'ALL_PROXY=socks5h://127.0.0.1:17890' -e 'HTTPS_PROXY=http://127.0.0.1:17891' -e 'HTTP_PROXY=http://127.0.0.1:17891' -e 'NO_PROXY=localhost,127.0.0.1,::1')
 fi
 
 "$runtime" run --rm --platform linux/amd64 "${run_network_args[@]}" \
