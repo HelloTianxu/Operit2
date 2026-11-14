@@ -18,7 +18,16 @@ jobs:
           sudo apt-get install -y bison build-essential bzip2 ca-certificates curl diffutils flex gawk gzip patch pkg-config tar unzip xz-utils powershell
       - name: Fetch sources and NDK
         run: |
-          pwsh -NoProfile -File tools/android-runtime/fetch_sources.ps1
+          for attempt in 1 2 3 4 5; do
+            if pwsh -NoProfile -File tools/android-runtime/fetch_sources.ps1; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then
+              exit 1
+            fi
+            echo "Source download attempt $attempt failed; retrying..."
+            sleep $((attempt * 15))
+          done
           bash tools/android-runtime/fetch_ndk_wsl.sh
       - name: Build Android terminal runtime
         run: |
