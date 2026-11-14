@@ -1,0 +1,90 @@
+name: Build Installable Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install runtime tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison build-essential bzip2 ca-certificates curl diffutils flex gawk gzip patch pkg-config tar unzip xz-utils powershell
+      - name: Fetch sources and NDK
+        run: |
+          pwsh -NoProfile -File tools/android-runtime/fetch_sources.ps1
+          bash tools/android-runtime/fetch_ndk_wsl.sh
+      - name: Build Android terminal runtime
+        run: |
+          export ANDROID_NDK_HOME="$HOME/.cache/operit-android-runtime/android-ndk-r29-beta4"
+          bash tools/android-runtime/build_android_tools_wsl.sh
+          bash tools/android-runtime/build_alpine_rootfs_wsl.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: operit2-android-runtime
+          path: |
+            apps/flutter/app/android/app/src/main/jniLibs/arm64-v8a/libbash.so
+            apps/flutter/app/android/app/src/main/jniLibs/arm64-v8a/liboperit_busybox.so
+            apps/flutter/app/android/app/src/main/jniLibs/arm64-v8a/liboperit_loader.so
+            apps/flutter/app/android/app/src/main/jniLibs/arm64-v8a/liboperit_proot.so
+            apps/flutter/app/android/app/src/main/assets/android-runtime/arm64-v8a/rootfs.tar.gz.bin
+            apps/flutter/app/android/app/src/main/assets/android-runtime/arm64-v8a/rootfs.tar.gz.bin.sha256
+          if-no-files-found: error
+          retention-days: 3
+
+  build-apk:
+    needs: build-android-runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    env:
+      RUSTFLAGS: -Awarnings
+      RUST_TOOLCHAIN_VERSION: 1.95.0
+      FVM_VERSION: 4.3.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: operit2-android-runtime
+          path: apps/flutter/app/android/app/src/main
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.11.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install FVM and Flutter
+        run: |
+          dart pub global activate fvm "$FVM_VERSION"
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          cd apps/flutter/app
+          "$HOME/.pub-cache/bin/fvm" install --skip-pub-get
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
+          targets: aarch64-linux-android
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang cmake ninja-build libclang-21-dev lld
+          corepack enable pnpm
+          cd plugins/packages/buildin/workflow
+          corepack pnpm install --frozen-lockfile
+      - name: Build unsigned release APK
+        run: |
+          python3 tools/build_scripts/build_flutter_android.py --build-name 2.0.0 --build-number 41 --skip-signing
+      - uses: actions/upload-artifact@v4
+        with:
+          name: operit2-installable-apk
+          path: tools/release/dist/*.apk
+          if-no-files-found: error
+          retention-days: 3
