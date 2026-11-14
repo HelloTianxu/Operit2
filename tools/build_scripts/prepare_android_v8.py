@@ -382,7 +382,7 @@ def find_libclang():
         llvm = find_host_clang()
         candidates = [llvm / "lib"]
     else:
-        candidates = [Path("/usr/lib/llvm21/lib")]
+        candidates = [Path("/usr/lib/llvm-21/lib"), Path("/usr/lib/llvm21/lib")]
         candidates += sorted(Path("/usr/lib").glob("llvm*/lib"), reverse=True)
         candidates += [Path("/usr/lib/x86_64-linux-gnu"), Path("/usr/lib64"), Path("/usr/lib")]
     libraries = []

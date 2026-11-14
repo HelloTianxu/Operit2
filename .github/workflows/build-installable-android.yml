@@ -85,6 +85,13 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
           targets: aarch64-linux-android
+      - name: Cache Android V8 build
+        uses: actions/cache@v4
+        with:
+          path: tools/release/work/android-v8
+          key: android-v8-${{ runner.os }}-${{ hashFiles('tools/build_scripts/prepare_android_v8.py', 'apps/flutter/native/operit-flutter-bridge/Cargo.lock') }}
+          restore-keys: |
+            android-v8-${{ runner.os }}-
       - name: Install native build dependencies
         run: |
           sudo apt-get update
