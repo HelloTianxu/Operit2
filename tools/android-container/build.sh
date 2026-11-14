@@ -31,7 +31,18 @@ if [[ "${OPERIT_USE_MBP_PROXY:-0}" == 1 ]]; then
   run_proxy_env=(-e 'ALL_PROXY=socks5h://127.0.0.1:17890' -e 'HTTPS_PROXY=http://127.0.0.1:17891' -e 'HTTP_PROXY=http://127.0.0.1:17891' -e 'NO_PROXY=localhost,127.0.0.1,::1')
 fi
 
-"$runtime" run --rm --platform linux/amd64 "${run_network_args[@]}" \
+container_name="operit2-android-build-$$"
+# Stop the container as well as the docker client when this script is cancelled.
+cleanup_container() {
+  if "$runtime" container inspect "$container_name" >/dev/null 2>&1; then
+    "$runtime" stop --timeout 10 "$container_name" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup_container EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+"$runtime" run --rm --name "$container_name" --platform linux/amd64 "${run_network_args[@]}" \
   -v "$repo_dir:$source_root:ro" \
   -v "$host_repo_dir:/host-repo:ro" \
   -v "$repo_dir/tools/release/dist:/output-dist" \
@@ -62,7 +73,11 @@ fi
   -e OPERIT_LIBCLANG_DIR=/usr/lib/llvm-21/lib \
   -w /tmp \
   "$image" bash -lc '
-    set +e
+    set -eo pipefail
+    # Shared package caches may be mutated by native plugin builds: serialize runs.
+    exec 9>/cache/android-v8/container-build.lock
+    flock -n 9 || { echo "Another Android build holds the shared cache lock" >&2; exit 75; }
+    test "$(realpath -m /work)" = /work && test ! -L /work
     rm -rf /work
     mkdir -p /work
     tar -C /tmp/operit2-android-source \
@@ -83,20 +98,13 @@ fi
     rm -rf /work/apps/flutter/app/.fvm /work/tools/release/work/android-v8
     mkdir -p /work/apps/flutter/app/.fvm /opt/fvm-cache /cache/android-v8
     ln -sfn /opt/fvm-cache/versions/3.41.10-ohos-0.0.2-beta.operit.9 /work/apps/flutter/app/.fvm/flutter_sdk
-    if [[ -d /work/apps/flutter/thirdparty/fvp/android ]]; then
-      if [[ ! -e /cache/fvp-android/CMakeLists.txt ]]; then
-        cp -a /work/apps/flutter/thirdparty/fvp/android/. /cache/fvp-android/
-      fi
-      rm -rf /work/apps/flutter/thirdparty/fvp/android
-      ln -s /cache/fvp-android /work/apps/flutter/thirdparty/fvp/android
-    fi
     mkdir -p /work/tools/release/work /work/apps/flutter/native/operit-flutter-bridge
     ln -s /cache/android-v8 /work/tools/release/work/android-v8
     rm -rf /work/apps/flutter/native/operit-flutter-bridge/target
     ln -s /cache/cargo-target /work/apps/flutter/native/operit-flutter-bridge/target
     cd /work
-    bash tools/android-container/build-inside.sh
-    build_status=$?
+    build_status=0
+    bash tools/android-container/build-inside.sh || build_status=$?
     if compgen -G "tools/release/dist/*.apk" >/dev/null; then
       cp -f tools/release/dist/*.apk /output-dist/
     fi
