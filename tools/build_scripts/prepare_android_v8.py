@@ -371,12 +371,15 @@ def find_host_clang():
 
 def find_libclang():
     """Locate libclang 21.1+ for the source bindings generation."""
+    configured = (Path(os.environ["OPERIT_LIBCLANG_DIR"])
+                  if "OPERIT_LIBCLANG_DIR" in os.environ else None)
+    if configured:
+        expected = "libclang.dll" if IS_WINDOWS else "libclang.so"
+        if (configured / expected).is_file() or (not IS_WINDOWS and list(configured.glob("libclang.so*"))):
+            return configured
+        raise RuntimeError(f"OPERIT_LIBCLANG_DIR has no {expected}: {configured}")
     if IS_WINDOWS:
-        directory = (Path(os.environ["OPERIT_LIBCLANG_DIR"])
-                     if "OPERIT_LIBCLANG_DIR" in os.environ else None)
-        if not directory or not (directory / "libclang.dll").is_file():
-            raise RuntimeError("Set OPERIT_LIBCLANG_DIR to the directory containing libclang.dll (21.1+)")
-        return directory
+        raise RuntimeError("Set OPERIT_LIBCLANG_DIR to the directory containing libclang.dll (21.1+)")
     pattern = "libclang.so*"
     if sys.platform == "darwin":
         llvm = find_host_clang()
