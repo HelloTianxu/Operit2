@@ -85,7 +85,8 @@ jobs:
       - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential clang cmake ninja-build libclang-dev lld
+          sudo apt-get install -y build-essential clang cmake ninja-build libclang-dev lld python3-venv
+          python3 -m venv .venv
           npm install --global typescript@5.9.3
           corepack enable pnpm
           cd plugins/packages/buildin/workflow
