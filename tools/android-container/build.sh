@@ -80,10 +80,20 @@ trap 'exit 143' TERM
     test "$(realpath -m /work)" = /work && test ! -L /work
     rm -rf /work
     mkdir -p /work
+    # tar exits 1 when a source file changes while it is being read (the host
+    # repo keeps its build outputs and caches live); only exit 2+ is fatal.
+    set +e
     tar -C /tmp/operit2-android-source \
       --exclude=.dart_tool --exclude=build --exclude=node_modules --exclude="*/node_modules" \
       --exclude=.pnpm-store --exclude="*/.pnpm-store" --exclude=.fvm \
+      --exclude=.venv --exclude="*/.venv" \
       -cf - . | tar -C /work -xf -
+    copy_status=("${PIPESTATUS[@]}")
+    set -e
+    if (( copy_status[0] > 1 || copy_status[1] > 1 )); then
+      echo "Source copy failed: tar producer=${copy_status[0]} consumer=${copy_status[1]}" >&2
+      exit 1
+    fi
     host_git_dir=$(sed -n "s/^gitdir: //p" /work/.git)
     git_common=/host-repo/.git
     worktree_name=$(basename "$host_git_dir")
