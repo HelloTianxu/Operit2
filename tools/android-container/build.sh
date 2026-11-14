@@ -82,8 +82,10 @@ fi
     rm -rf /work/apps/flutter/app/.fvm /work/tools/release/work/android-v8
     mkdir -p /work/apps/flutter/app/.fvm /opt/fvm-cache /cache/android-v8
     ln -sfn /opt/fvm-cache/versions/3.41.10-ohos-0.0.2-beta.operit.9 /work/apps/flutter/app/.fvm/flutter_sdk
-    mkdir -p /work/tools/release/work
+    mkdir -p /work/tools/release/work /work/apps/flutter/native/operit-flutter-bridge
     ln -s /cache/android-v8 /work/tools/release/work/android-v8
+    rm -rf /work/apps/flutter/native/operit-flutter-bridge/target
+    ln -s /cache/cargo-target /work/apps/flutter/native/operit-flutter-bridge/target
     cd /work
     bash tools/android-container/build-inside.sh
     build_status=$?
