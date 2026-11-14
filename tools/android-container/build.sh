@@ -23,7 +23,15 @@ if ! "$runtime" image inspect "$image" >/dev/null 2>&1 || [[ "${REBUILD_IMAGE:-0
 fi
 
 source_root="/tmp/operit2-android-source"
-"$runtime" run --rm --platform linux/amd64 \
+run_network_args=()
+run_proxy_env=()
+if [[ "${OPERIT_USE_MBP_PROXY:-0}" == 1 ]]; then
+  "$HOME/.local/bin/mbp-proxy" on >/dev/null
+  run_network_args=(--network host)
+  run_proxy_env=(-e 'ALL_PROXY=socks5h://127.0.0.1:17890' -e 'HTTPS_PROXY=socks5h://127.0.0.1:17890' -e 'HTTP_PROXY=socks5h://127.0.0.1:17890' -e 'NO_PROXY=localhost,127.0.0.1,::1')
+fi
+
+"$runtime" run --rm --platform linux/amd64 "${run_network_args[@]}" \
   -v "$repo_dir:$source_root:ro" \
   -v "$host_repo_dir:/host-repo:ro" \
   -v "$repo_dir/tools/release/dist:/output-dist" \
@@ -37,6 +45,7 @@ source_root="/tmp/operit2-android-source"
   -v "$cache_root/flutter:/cache/fvm" \
   -e CI=true \
   -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+  "${run_proxy_env[@]}" \
   -e CARGO_HOME=/opt/cargo \
   -e CARGO_TARGET_DIR=/cache/cargo-target \
   -e RUSTUP_HOME=/opt/rustup \
