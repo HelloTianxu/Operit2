@@ -35,6 +35,8 @@ source_root="/tmp/operit2-android-source"
   -v "$cache_root/android-runtime:/root/.cache/operit-android-runtime" \
   -v "$cache_root/android-v8:/cache/android-v8" \
   -v "$cache_root/flutter:/cache/fvm" \
+  -e CI=true \
+  -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
   -e CARGO_HOME=/opt/cargo \
   -e CARGO_TARGET_DIR=/cache/cargo-target \
   -e RUSTUP_HOME=/opt/rustup \
@@ -44,7 +46,11 @@ source_root="/tmp/operit2-android-source"
   -w /tmp \
   "$image" bash -lc '
     rm -rf /work
-    cp -a /tmp/operit2-android-source /work
+    mkdir -p /work
+    tar -C /tmp/operit2-android-source \
+      --exclude=.dart_tool --exclude=build --exclude=node_modules --exclude="*/node_modules" \
+      --exclude=.pnpm-store --exclude="*/.pnpm-store" --exclude=.fvm \
+      -cf - . | tar -C /work -xf -
     host_git_dir=$(sed -n "s/^gitdir: //p" /work/.git)
     git_common=/host-repo/.git
     worktree_name=$(basename "$host_git_dir")
