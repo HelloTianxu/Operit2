@@ -6,7 +6,7 @@ git_common_dir="$(git -C "$repo_dir" rev-parse --git-common-dir)"
 host_repo_dir="$(cd "$git_common_dir/.." && pwd)"
 image="operit2-android-build:ubuntu24"
 cache_root="${OPERIT_ANDROID_CONTAINER_CACHE:-$repo_dir/tools/release/work/android-container}"
-mkdir -p "$cache_root"/{cargo-registry,cargo-git,cargo-target,gradle,pub,fvm-cache,pnpm-store,flutter-cache,android-sdk,android-runtime,android-v8,downloads,dist}
+mkdir -p "$cache_root"/{cargo-registry,cargo-git,cargo-target,gradle,pub,fvm-cache,pnpm-store,flutter-cache,android-sdk,android-runtime,android-v8,fvp-android,downloads,dist}
 
 runtime="${CONTAINER_RUNTIME:-docker}"
 if ! command -v "$runtime" >/dev/null 2>&1; then
@@ -46,6 +46,7 @@ fi
   -v "$cache_root/android-sdk:/opt/android-sdk" \
   -v "$cache_root/android-runtime:/root/.cache/operit-android-runtime" \
   -v "$cache_root/android-v8:/cache/android-v8" \
+  -v "$cache_root/fvp-android:/cache/fvp-android" \
   -v "$cache_root/downloads:/root/.cache/operit-downloads" \
   -e CI=true \
   -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
@@ -82,6 +83,13 @@ fi
     rm -rf /work/apps/flutter/app/.fvm /work/tools/release/work/android-v8
     mkdir -p /work/apps/flutter/app/.fvm /opt/fvm-cache /cache/android-v8
     ln -sfn /opt/fvm-cache/versions/3.41.10-ohos-0.0.2-beta.operit.9 /work/apps/flutter/app/.fvm/flutter_sdk
+    if [[ -d /work/apps/flutter/thirdparty/fvp/android ]]; then
+      if [[ ! -e /cache/fvp-android/CMakeLists.txt ]]; then
+        cp -a /work/apps/flutter/thirdparty/fvp/android/. /cache/fvp-android/
+      fi
+      rm -rf /work/apps/flutter/thirdparty/fvp/android
+      ln -s /cache/fvp-android /work/apps/flutter/thirdparty/fvp/android
+    fi
     mkdir -p /work/tools/release/work /work/apps/flutter/native/operit-flutter-bridge
     ln -s /cache/android-v8 /work/tools/release/work/android-v8
     rm -rf /work/apps/flutter/native/operit-flutter-bridge/target
