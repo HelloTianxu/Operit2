@@ -8,6 +8,7 @@ permissions:
 
 jobs:
   build-android-runtime:
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -48,7 +49,6 @@ jobs:
           retention-days: 3
 
   build-apk:
-    needs: build-android-runtime
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
@@ -58,10 +58,13 @@ jobs:
       OPERIT_LIBCLANG_DIR: /usr/lib/llvm-18/lib
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: operit2-android-runtime
-          path: apps/flutter/app/android/app/src/main
+      - name: Download previously built Android runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/operit-runtime
+          gh run download 43595775728 --repo "${{ github.repository }}" --name operit2-android-runtime --dir /tmp/operit-runtime
+          cp -a /tmp/operit-runtime/. apps/flutter/app/android/app/src/main/
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: 3.11.5
