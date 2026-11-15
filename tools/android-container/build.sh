@@ -5,7 +5,9 @@ repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 git_common_dir="$(git -C "$repo_dir" rev-parse --git-common-dir)"
 host_repo_dir="$(cd "$git_common_dir/.." && pwd)"
 image="operit2-android-build:ubuntu24"
-cache_root="${OPERIT_ANDROID_CONTAINER_CACHE:-$repo_dir/tools/release/work/android-container}"
+# Caches live outside the worktree so every project and every worktree reuses
+# the same downloaded toolchains, SDKs and compiled dependencies.
+cache_root="${OPERIT_ANDROID_CONTAINER_CACHE:-$HOME/android-dev/caches/android-container}"
 mkdir -p "$cache_root"/{cargo-registry,cargo-git,cargo-target,gradle,pub,fvm-cache,pnpm-store,flutter-cache,android-sdk,android-runtime,android-v8,fvp-android,downloads,dist}
 
 runtime="${CONTAINER_RUNTIME:-docker}"
