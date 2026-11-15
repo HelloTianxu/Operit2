@@ -6,6 +6,7 @@ import gzip
 import json
 from pathlib import Path
 import tempfile
+import time
 import urllib.request
 
 
@@ -14,15 +15,42 @@ BUNDLE_PATH = REPO_ROOT / "core/crates/runtime/application/assets/models_dev/cat
 _prepared = False
 
 
+DOWNLOAD_ATTEMPTS = 5
+
+
 def download_catalog(name: str) -> dict:
-    """Read and validate one upstream catalog before replacing the bundled pair."""
-    request = urllib.request.Request(
-        f"https://models.dev/{name}.json", headers={"User-Agent": "Operit-build"})
-    with urllib.request.urlopen(request, timeout=60) as response:
-        catalog = json.load(response)
-    if not isinstance(catalog, dict) or not catalog:
-        raise ValueError(f"models.dev {name}.json must be a nonempty object")
-    return catalog
+    """Read and validate one upstream catalog before replacing the bundled pair.
+
+    The catalog is fetched on every release build, so a single truncated response would otherwise
+    fail the whole build. Retry transient network errors, and read the body explicitly so a short
+    read is detected instead of surfacing as an opaque JSON error.
+    """
+    last_error: Exception | None = None
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            request = urllib.request.Request(
+                f"https://models.dev/{name}.json", headers={"User-Agent": "Operit-build"})
+            with urllib.request.urlopen(request, timeout=60) as response:
+                body = response.read()
+                expected = response.headers.get("Content-Length")
+                if expected is not None and len(body) != int(expected):
+                    raise IOError(
+                        f"models.dev {name}.json truncated: got {len(body)} of {expected} bytes")
+            catalog = json.loads(body)
+            if not isinstance(catalog, dict) or not catalog:
+                raise ValueError(f"models.dev {name}.json must be a nonempty object")
+            return catalog
+        except Exception as error:  # network errors, short reads, malformed payloads
+            last_error = error
+            if attempt == DOWNLOAD_ATTEMPTS:
+                break
+            delay = min(2 ** attempt, 30)
+            print(f"models.dev {name}.json attempt {attempt} failed ({error}); "
+                  f"retrying in {delay}s", flush=True)
+            time.sleep(delay)
+    raise RuntimeError(
+        f"models.dev {name}.json could not be downloaded after "
+        f"{DOWNLOAD_ATTEMPTS} attempts") from last_error
 
 
 def refresh_bundle(destination: Path = BUNDLE_PATH) -> None:

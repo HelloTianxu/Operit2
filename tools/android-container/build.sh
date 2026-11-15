@@ -44,7 +44,7 @@ trap cleanup_container EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-"$runtime" run --rm --name "$container_name" --platform linux/amd64 "${run_network_args[@]}" \
+"$runtime" run --rm --name "$container_name" --platform linux/amd64 ${run_network_args[@]+"${run_network_args[@]}"} \
   -v "$repo_dir:$source_root:ro" \
   -v "$host_repo_dir:/host-repo:ro" \
   -v "$repo_dir/tools/release/dist:/output-dist" \
@@ -63,7 +63,7 @@ trap 'exit 143' TERM
   -v "$cache_root/downloads:/root/.cache/operit-downloads" \
   -e CI=true \
   -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
-  "${run_proxy_env[@]}" \
+  ${run_proxy_env[@]+"${run_proxy_env[@]}"} \
   -e CARGO_HOME=/opt/cargo \
   -e CARGO_TARGET_DIR=/cache/cargo-target \
   -e RUSTUP_HOME=/opt/rustup \

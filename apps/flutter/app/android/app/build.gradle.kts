@@ -34,6 +34,20 @@ configurations.configureEach {
     }
 }
 
+// A debuggable release makes Flutter's Gradle plugin request the debug engine artifacts, but
+// flutter-ohos-engine-maven publishes release artifacts only. Redirect every debug engine module
+// to its release counterpart so the optimized build stays debuggable.
+configurations.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        val engineVersion = "1.0.0-42d3d75a-operit.9.2"
+        listOf("flutter_embedding", "arm64_v8a", "armeabi_v7a", "x86_64").forEach { artifact ->
+            substitute(module("io.flutter:${artifact}_debug"))
+                .using(module("io.flutter:${artifact}_release:$engineVersion"))
+                .because("only release engine artifacts are published for this fork")
+        }
+    }
+}
+
 /** Stages ordinary assets and only the runtime ABIs selected for this build. */
 abstract class StageOperitAndroidAssets : DefaultTask() {
     @get:InputDirectory
@@ -209,6 +223,9 @@ android {
 
         release {
             signingConfig = signingConfigs.getByName("release")
+            // Keep the optimized release build but make it debuggable, so `adb run-as` can read
+            // the app's private data (sessions, databases) without a root shell.
+            isDebuggable = true
             proguardFiles("proguard-rules.pro")
             if (operitExternalRuntime) {
                 proguardFiles(operitModuleAndroid.file("proguard-rules.pro"))

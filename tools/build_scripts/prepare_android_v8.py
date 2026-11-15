@@ -23,6 +23,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 import tomllib
 import urllib.request
 import zipfile
@@ -227,9 +228,7 @@ def download_fallback_ndk(cache):
         archive = cache / "android-ndk-r26c-linux.zip"
         cache.mkdir(parents=True, exist_ok=True)
         print(f"Downloading fallback NDK: {NDK_FALLBACK_URL}", file=sys.stderr, flush=True)
-        with urllib.request.urlopen(NDK_FALLBACK_URL, timeout=1800) as response, \
-                archive.open("wb") as file:
-            shutil.copyfileobj(response, file)
+        archive.write_bytes(fetch_bytes(NDK_FALLBACK_URL, 1800))
         remove_path(directory)
         run(["unzip", "-d", cache, "-o", "-q", archive])
         archive.unlink()
@@ -328,8 +327,7 @@ def prepare_icu(source):
         url = ("https://chromium.googlesource.com/chromium/deps/icu/+/"
                f"{revision[1]}/{variant}/icudtl.dat?format=TEXT")
         print(f"Fetching pinned ICU data: {variant} @ {revision[1]}", file=sys.stderr, flush=True)
-        with urllib.request.urlopen(url, timeout=180) as response:
-            data = base64.b64decode(response.read(), validate=True)
+        data = base64.b64decode(fetch_bytes(url, 180), validate=True)
         if not data:
             raise RuntimeError("Downloaded empty ICU data")
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -433,9 +431,36 @@ def deps_version(source, name):
     return match.group(1)
 
 
-def fetch_bytes(url, timeout):
-    with urllib.request.urlopen(url, timeout=timeout) as response:
-        return response.read()
+DOWNLOAD_ATTEMPTS = 5
+
+
+def fetch_bytes(url, timeout, attempts=DOWNLOAD_ATTEMPTS):
+    """Download bytes, retrying transient failures and short reads.
+
+    V8's toolchain and ICU data are fetched during the build. A single truncated response used to
+    abort the whole build with IncompleteRead, so retry and verify the advertised length instead.
+    """
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as response:
+                data = response.read()
+                expected = response.headers.get("Content-Length")
+                if expected is not None and len(data) != int(expected):
+                    raise IOError(
+                        f"truncated download: got {len(data)} of {expected} bytes from {url}")
+            if not data:
+                raise IOError(f"empty download from {url}")
+            return data
+        except Exception as error:  # network errors, short reads
+            last_error = error
+            if attempt == attempts:
+                break
+            delay = min(2 ** attempt, 30)
+            print(f"Download attempt {attempt} failed ({error}); retrying in {delay}s",
+                  file=sys.stderr, flush=True)
+            time.sleep(delay)
+    raise RuntimeError(f"could not download {url} after {attempts} attempts") from last_error
 
 
 def cipd_tool_tag():

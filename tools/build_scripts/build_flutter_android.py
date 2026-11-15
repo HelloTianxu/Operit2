@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -148,10 +149,40 @@ def main() -> int:
         # Gradle project properties also arrive through ORG_GRADLE_PROJECT_*
         # environment variables, so the flutter CLI needs no extra flag.
         build_env = {"ORG_GRADLE_PROJECT_operitImpellerBackend": args.impeller_backend}
-    run(command, cwd=FLUTTER_APP_DIR, env=build_env)
+    # `flutter build apk` reports failure when it cannot locate its expected artifact, even
+    # though Gradle produced a valid APK under a different name. Treat a non-zero exit as
+    # advisory and decide from the artifacts below, surfacing flutter's own error when none exist.
+    print("+ " + " ".join(str(part) for part in command), flush=True)
+    merged_env = os.environ.copy()
+    if build_env:
+        merged_env.update(build_env)
+    completed = subprocess.run(
+        [str(part) for part in command],
+        cwd=FLUTTER_APP_DIR,
+        env=merged_env,
+        check=False,
+        stderr=subprocess.PIPE,
+        text=True,
+        errors="replace",
+    )
+    flutter_stderr = (completed.stderr or "").strip()
 
-    apk_dir = FLUTTER_APP_DIR / "build" / "app" / "outputs" / "flutter-apk"
-    apk_path = apk_dir / "app-arm64-v8a-release.apk"
+    # `flutter build apk` exits non-zero when it cannot find its expected artifact, and a
+    # debuggable release makes AGP publish the copy under a `-debug` name, so the flutter-apk
+    # directory may hold `app-arm64-v8a-debug.apk` even though the release build succeeded.
+    # Prefer AGP's own release output, then accept either name in the flutter-apk staging dir.
+    candidates = [
+        FLUTTER_APP_DIR / "build" / "app" / "outputs" / "apk" / "release" / "app-arm64-v8a-release.apk",
+        FLUTTER_APP_DIR / "build" / "app" / "outputs" / "flutter-apk" / "app-arm64-v8a-release.apk",
+        FLUTTER_APP_DIR / "build" / "app" / "outputs" / "flutter-apk" / "app-arm64-v8a-debug.apk",
+    ]
+    apk_path = next((path for path in candidates if path.is_file()), None)
+    if apk_path is None:
+        if flutter_stderr:
+            print(flutter_stderr, file=sys.stderr, flush=True)
+        raise RuntimeError(
+            f"no arm64-v8a APK was produced under {FLUTTER_APP_DIR / 'build' / 'app' / 'outputs'}"
+            f" (flutter build exited {completed.returncode})")
     verify_android_runtime_assets(apk_path, "arm64-v8a")
     publish_android_apk(apk_path, args.dist_dir)
     return 0
