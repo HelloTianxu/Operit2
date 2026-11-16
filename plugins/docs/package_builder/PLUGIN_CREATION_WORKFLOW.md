@@ -91,6 +91,7 @@ operit_editor 的 `operit_editor` 工具实际调用 `Tools.SoftwareSettings.exe
 - TypeScript 输出可读的 CommonJS JavaScript。Compose UI 保留 `ctx.UI.*` 界面声明和回调，由运行时完成 Compose 编译与缓存；交付文件供用户直接编辑，不生成 Compose 内部预编译产物。按实际 shell 执行项目已声明的构建命令，检查退出码、超时状态和真实输出文件。没有可用编译器时说明环境未准备完成。
 - 网络、文件与终端操作使用 `Tools.Network`、`Tools.Files`、`Tools.System.terminal` 及其 host API。不要用平台分支实现另一套插件运行链路。声明文件的存在不代表当前 host 实现了所有能力。
 - 单文件脚本包保留 `METADATA` 与导出函数；ToolPkg 在归档根目录放置 manifest，并按清单路径包含编译后的入口、子包、UI、资源与二次开发源码。
+- 需要 hook 的包必须做成 ToolPkg：单文件脚本包的脚本体不会执行，只有 ToolPkg 的 `main` 会被运行。见 [ToolPkg 格式说明](TOOLPKG_FORMAT_GUIDE.md#12-toolpkg-vs-传统-js-脚本)。
 - 用文件工具 `Tools.Files.zip(sourceVfsPath, artifactVfsPath, false)` 可创建不含外层目录的归档。成品扩展名为 `.toolpkg`，manifest 必须位于 ZIP 根目录。核验成品存在、内容完整，以及 runtime host 可读的 `<artifact_host_path>`。
 
 ## 4. 首次安装与测试

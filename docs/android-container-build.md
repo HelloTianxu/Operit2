@@ -96,7 +96,16 @@ tools/android-container/install.sh    # 安装最新产物并启动 app.operit
 
 Android 的 release 构建类型设置了 `isDebuggable = true`，因此产物**可以**用
 `adb run-as app.operit` 读取应用私有目录（`/data/user/0/app.operit`），无需 root。
-Dart 代码仍以 AOT 编译并做 tree-shaking；变化只在于下文列出的三项。
+
+**Dart 必须保持 AOT，这一点不是自动成立的。** Flutter 的 Gradle 插件用 Android 构建类型
+推导 Dart 构建模式（`FlutterPluginUtils.buildModeFor`：构建类型可调试时返回 `debug`）。
+只设置 `isDebuggable = true` 会让 Dart 编成 JIT 快照（`assets/flutter_assets/kernel_blob.bin`）
+且不产出 `lib/<abi>/libapp.so`，而本 fork 只发布 release 引擎制品，于是 debug 字节码与
+release 引擎不匹配，**应用一启动就崩溃**。
+
+`app/build.gradle.kts` 因此在 release 任务上把 Flutter 构建模式钉回 `release`，用
+`doFirst` 执行：配置期的赋值会被插件自己的赋值覆盖，而 `doFirst` 在所有配置动作之后、
+任务读取该值之前运行。产物据此同时具备 AOT 与可调试。
 
 由此产生三个必须知道的后果：
 
@@ -105,15 +114,25 @@ Dart 代码仍以 AOT 编译并做 tree-shaking；变化只在于下文列出的
    `app-arm64-v8a-release.apk`，因此 `flutter build apk` 会以非零码退出。
    `build_flutter_android.py` 把该退出码视为提示，改为从
    `build/app/outputs/apk/release/app-arm64-v8a-release.apk` 取产物。
-2. **图标字体**：Flutter 在 debuggable 下跳过图标字体子集化，`--tree-shake-icons` 不生效，
-   产物会包含完整字体（日志会提示 `Font subsetting is not supported in debug mode`）。
+2. **AOT 校验**：`build_flutter_android.py` 在发布前要求 `lib/<abi>/libapp.so` 存在。
+   缺失即失败，并提示是否携带了 JIT 的 `kernel_blob.bin`。此前只校验 rootfs 资产，
+   因此 JIT 模式的包能通过验证、到设备上才崩溃。
 3. **引擎制品**：`flutter-ohos-engine-maven` 只发布 release 引擎制品，而 debuggable 会让
    Flutter 的 Gradle 插件请求 `*_debug` 模块。`app/build.gradle.kts` 用依赖替换把这些模块
-   指向对应的 `*_release`，因此构建可以完成。
+   指向对应的 `*_release`。**依赖替换只解决依赖解析，不决定 Dart 编译模式**；
+   决定模式的是上文钉住的 `buildMode`。
 
 **会话数据不需要 debuggable**：Operit2 的运行时状态位于共享存储
 `/storage/emulated/0/Agent_run`，adb 可直接读取。debuggable 只用于访问
 `/data/user/0/app.operit` 下的私有数据。
+
+## Correction log
+
+| 旧说法 | 出现位置 | 实际情况 |
+| --- | --- | --- |
+| "Dart 代码仍以 AOT 编译并做 tree-shaking" | 本文件"可调试构建" | 只设 `isDebuggable = true` 时 Flutter 按 `debug` 模式编译 Dart，产出 `kernel_blob.bin` 且无 `libapp.so`，与 release 引擎不匹配导致启动崩溃。AOT 依赖构建脚本钉住 `buildMode`，并非默认结果 |
+| "Flutter 在 debuggable 下跳过图标字体子集化，`--tree-shake-icons` 不生效" | 本文件"可调试构建"第 2 条 | 钉住 `buildMode=release` 后字体子集化照常执行，日志出现 `Font asset ... was tree-shaken` |
+| 发布前只校验 Android rootfs 资产 | 本文件"可调试构建" | JIT 模式的 APK 因此能通过验证；现已校验 `lib/<abi>/libapp.so` |
 
 ## 文件监视
 

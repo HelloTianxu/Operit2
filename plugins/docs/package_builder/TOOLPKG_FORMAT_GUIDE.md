@@ -24,6 +24,12 @@
 | UI 模块 | 不支持 | 支持 Compose DSL UI |
 | 多语言 | 需手动实现 | 内置支持 |
 | 版本管理 | 无标准 | 内置版本字段 |
+| 脚本执行 | **不执行**，只读取 METADATA | 执行 `main` 导出的 `registerToolPkg()` |
+
+传统 JS 脚本只被解析 METADATA 来登记工具；**它的脚本体从不运行**，因此不能在脚本里注册
+任何 hook（`registerChatRuntimeHook`、`registerToolLifecycleHook`、`registerAppLifecycleHook`
+等）、也不能依赖顶层副作用。需要在运行时被回调的包必须是 ToolPkg：只有 ToolPkg 的
+`main` 脚本会被执行，hook 只能在那里注册。
 
 ### 1.3 ToolPkg API 版本与跨平台要求
 

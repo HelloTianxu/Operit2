@@ -660,7 +660,13 @@ The NDK is provisioned automatically by the Android Gradle Plugin; `rustup targe
 is still required for the Rust bridge.
 
 The Android release build type is **debuggable**, so `adb run-as app.operit` can read the
-app's private data; the AOT build itself is unchanged. This makes AGP name the APK
+app's private data. Being debuggable does not by itself preserve the AOT build, and a JIT
+build crashes on launch against this fork's release-only engine artifacts; the build pins
+the Flutter build mode to compensate. See
+[Android container build](docs/android-container-build.md#可调试构建), which owns that
+mechanism, the AOT publication check, and the debuggable consequences.
+
+Being debuggable also makes AGP name the APK
 `-debug` while Flutter's tooling expects `-release`, so `flutter build apk` exits non-zero
 even on success — `build_flutter_android.py` treats that exit as advisory.
 
@@ -693,6 +699,20 @@ r23+ is discoverable (`~/Android/ndk`, `$ANDROID_HOME/ndk` or
 ```bash
 python tools/build_scripts/build_flutter_android.py --build-name 2.0.0 --build-number 11
 ```
+
+A host-only `cargo check` does not compile the Android-only adapters: modules such as
+`apps/flutter/native/operit-flutter-bridge/src/platform_runtime/android.rs` sit behind
+`#[cfg(target_os = "android")]`, so Android-specific errors pass a host check and only
+surface in a full Gradle build. Check the real target before trusting a host check:
+
+```bash
+cargo check --manifest-path apps/flutter/native/operit-flutter-bridge/Cargo.toml --target aarch64-linux-android
+```
+
+That requires the NDK, `ANDROID_NDK_HOME`, the target linker, `LIBCLANG_PATH`, and the
+`RUSTY_V8_*` values that point at a source-built V8 archive; `tools/android-container/build.sh`
+and the Gradle build supply them. The container toolkit at `~/android-dev/toolkit/check-android-rust.sh`
+assembles the same environment against the shared caches.
 
 ## OpenHarmony Flutter App
 
