@@ -10,8 +10,8 @@ use operit_host_api::{
 
 use operit_tools::tools::ToolResultDataClasses::{
     stringResultData, AppListData, AppOperationData, AppUsageTimeEntry, AppUsageTimeResultData,
-    DeviceInfoResultData, LocationData, Notification, NotificationData, SystemSettingData,
-    ToolResultData,
+    DeviceInfoResultData, KeepScreenOnData, LocationData, Notification, NotificationData,
+    SystemSettingData, ToolResultData,
 };
 use operit_tools::ConversationMarkupManager::ToolResult;
 use operit_vfs::VisualFileSystem::VisualFileSystem;
@@ -40,6 +40,7 @@ pub enum SystemOperationToolOperation {
     SendNotification,
     ModifySystemSetting,
     GetSystemSetting,
+    SetKeepScreenOn,
     UninstallApp,
     ListInstalledApps,
     StartApp,
@@ -162,6 +163,25 @@ impl StandardSystemOperationTools {
             Err(error) => toolError(
                 tool,
                 format!("Error modifying system settings: {}", error.message),
+            ),
+        }
+    }
+
+    #[allow(non_snake_case)]
+    /// Holds or releases the screen-awake hold for the running task.
+    pub fn setKeepScreenOn(&self, tool: &AITool) -> ToolResult {
+        let enabled = parseBoolean(optionalParameterValue(tool, "enabled").as_deref());
+        match self.host().and_then(|host| host.setKeepScreenOn(enabled)) {
+            Ok(data) => toolSuccessData(
+                tool,
+                ToolResultData::KeepScreenOnData(KeepScreenOnData {
+                    enabled: data.enabled,
+                    mechanism: data.mechanism,
+                }),
+            ),
+            Err(error) => toolError(
+                tool,
+                format!("Error setting keep-screen-on: {}", error.message),
             ),
         }
     }
@@ -520,6 +540,7 @@ impl ToolExecutor for SystemOperationToolExecutor {
             | SystemOperationToolOperation::SetClipboardText
             | SystemOperationToolOperation::SendNotification
             | SystemOperationToolOperation::ModifySystemSetting
+            | SystemOperationToolOperation::SetKeepScreenOn
             | SystemOperationToolOperation::UninstallApp
             | SystemOperationToolOperation::StartApp
             | SystemOperationToolOperation::StopApp
@@ -541,6 +562,9 @@ impl ToolExecutor for SystemOperationToolExecutor {
                 self.tools.modifySystemSetting(tool)
             }
             SystemOperationToolOperation::GetSystemSetting => self.tools.getSystemSetting(tool),
+            SystemOperationToolOperation::SetKeepScreenOn => {
+                self.tools.setKeepScreenOn(tool)
+            }
             SystemOperationToolOperation::UninstallApp => self.tools.uninstallApp(tool),
             SystemOperationToolOperation::ListInstalledApps => self.tools.listInstalledApps(tool),
             SystemOperationToolOperation::StartApp => self.tools.startApp(tool),
@@ -590,6 +614,13 @@ fn validateSystemOperationTool(
         SystemOperationToolOperation::GetSystemSetting => {
             if parameterValue(tool, "setting").is_empty() {
                 return invalid("setting is required.");
+            }
+        }
+        SystemOperationToolOperation::SetKeepScreenOn => {
+            let raw = parameterValue(tool, "enabled").to_lowercase();
+            if !matches!(raw.as_str(), "true" | "false" | "1" | "0" | "yes" | "no" | "y" | "n" | "on" | "off")
+            {
+                return invalid("enabled must be a boolean.");
             }
         }
         SystemOperationToolOperation::UninstallApp

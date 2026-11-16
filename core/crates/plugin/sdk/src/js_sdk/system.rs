@@ -408,6 +408,14 @@ pub trait SystemHost: Send + Sync {
         namespace: Option<String>,
     ) -> JsFuture<SystemSettingData>;
     ///
+    ///Hold the screen on while a task runs, so the device does not lock mid-task.
+    ///
+    ///The display may still dim; only locking and turning off are prevented. Releasing the hold
+    ///restores normal screen-off behavior.
+    ///@param enabled - True to hold the screen on, false to release the hold
+    ///
+    fn setKeepScreenOn(&self, enabled: bool) -> JsFuture<KeepScreenOnData>;
+    ///
     ///Get device information
     ///
     fn getDeviceInfo(&self) -> JsFuture<DeviceInfoResultData>;

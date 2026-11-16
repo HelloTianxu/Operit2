@@ -18,6 +18,9 @@
             { "name": "value", "description": { "zh": "设置值。", "en": "Setting value." }, "type": "string", "required": true },
             { "name": "namespace", "description": { "zh": "命名空间。", "en": "Setting namespace." }, "type": "string", "required": false }
         ] },
+        { "name": "set_keep_screen_on", "display": {"label": {"zh": "保持屏幕常亮", "en": "Keep screen on"}, "icon": "screen", "targetParameter": "enabled"}, "description": { "zh": "在任务运行期间保持屏幕不锁屏、不熄屏；屏幕仍可照常变暗。任务结束时传 false 释放。", "en": "Hold the screen on while a task runs so it does not lock or turn off; the display may still dim. Pass false to release when the task ends." }, "parameters": [
+            { "name": "enabled", "description": { "zh": "true 表示保持常亮，false 表示释放。", "en": "True to hold the screen on, false to release." }, "type": "boolean", "required": true }
+        ] },
         { "name": "install_app", "display": {"label": {"zh": "安装应用", "en": "Install app"}, "icon": "package", "targetParameter": "path"}, "description": { "zh": "使用当前平台原生安装器安装应用包，返回授权、安装器打开或完成状态。", "en": "Install an application package through the native host and report permission, installer or completion state." }, "parameters": [
             { "name": "path", "description": { "zh": "当前设备上的安装包绝对路径。", "en": "Absolute installer package path on this device." }, "type": "string", "required": true }
         ] },
@@ -188,6 +191,12 @@ async function modify_system_setting(params: { setting: string; value: string; n
     const result = await Tools.System.setSetting(params.setting, params.value, params.namespace ?? "system");
     const success = result.value === params.value;
     return { success, message: success ? "成功修改系统设置" : "修改系统设置失败", data: result };
+}
+
+/** Holds or releases the screen-awake hold for the running task. */
+async function set_keep_screen_on(params: { enabled: boolean }): Promise<ToolResponse> {
+    const result = await Tools.System.setKeepScreenOn(params.enabled);
+    return { success: true, message: result.enabled ? "屏幕已保持常亮（仍可变暗）" : "已释放屏幕常亮", data: result };
 }
 
 /** Requests installation through the current platform host. */
@@ -409,6 +418,7 @@ async function main(): Promise<void> {
 
 exports.get_system_setting = (params: { setting: string; namespace?: string }) => completeTool(get_system_setting, params);
 exports.modify_system_setting = (params: { setting: string; value: string; namespace?: string }) => completeTool(modify_system_setting, params);
+exports.set_keep_screen_on = (params: { enabled: boolean }) => completeTool(set_keep_screen_on, params);
 exports.install_app = (params: { path: string }) => completeTool(install_app, params);
 exports.uninstall_app = (params: { package_name: string; keep_data?: boolean }) => completeTool(uninstall_app, params);
 exports.list_installed_apps = (params: { include_system_apps?: boolean }) => completeTool(list_installed_apps, params);

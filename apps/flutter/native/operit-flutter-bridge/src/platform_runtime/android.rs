@@ -7,7 +7,7 @@ use operit_host_android_native::{
     createRuntimeHostManager, AndroidBluetoothHost, AndroidFileSystemHost, AndroidSystemOperationHost, AndroidTerminalHost,
 };
 use operit_host_api::HostManager::HostManager;
-use operit_host_api::SystemOperationHost;
+use operit_host_api::{KeepScreenOnData, SystemOperationHost};
 use operit_link::LinkDeviceInfo;
 
 use super::{install_owner_media, BridgeStartup, StartupMetadata};
@@ -18,6 +18,14 @@ use crate::FlutterOwnerCapabilities::{
     ownerSendNotification, ownerSystemOperation, FlutterSystemBindings,
     FlutterLocalInferenceHost, FlutterSystemOperationBridge, FlutterTtsSynthesisHost,
 };
+
+/// Applies the runtime's screen-awake request through the Flutter owner's wake-lock bridge.
+fn ownerKeepScreenOn(enabled: bool) -> operit_host_api::HostResult<KeepScreenOnData> {
+    crate::FlutterOwnerCapabilities::ownerSystemOperation(
+        "set_keep_screen_on",
+        serde_json::json!({ "enabled": enabled }),
+    )
+}
 
 /// Creates Android hosts and binds operations owned by the Flutter application.
 pub(crate) fn create_host_context(startup: &BridgeStartup) -> Result<HostManager, String> {
@@ -35,12 +43,15 @@ pub(crate) fn create_host_context(startup: &BridgeStartup) -> Result<HostManager
             startup.workspaceRoot.clone(),
             secretRoot.clone(),
             Arc::new(FlutterWebVisitBridge::new()),
-            Arc::new(AndroidSystemOperationHost::forPrivilegedRuntime(
-                language.clone(),
-                Arc::new(ownerGetSystemSetting),
-                Arc::new(ownerModifySystemSetting),
-                Arc::new(ownerSystemOperation::<serde_json::Value>),
-            )),
+            Arc::new(
+                AndroidSystemOperationHost::forPrivilegedRuntime(
+                    language.clone(),
+                    Arc::new(ownerGetSystemSetting),
+                    Arc::new(ownerModifySystemSetting),
+                    Arc::new(ownerSystemOperation::<serde_json::Value>),
+                )
+                .withKeepScreenOn(Arc::new(ownerKeepScreenOn)),
+            ),
         )
     } else {
         let StartupMetadata::AndroidDevice { archiveRuntimeRoot, .. } = &startup.metadata else {
@@ -51,11 +62,14 @@ pub(crate) fn create_host_context(startup: &BridgeStartup) -> Result<HostManager
             startup.workspaceRoot.clone(),
             archiveRuntimeRoot.clone(),
             Arc::new(FlutterWebVisitBridge::new()),
-            Arc::new(AndroidSystemOperationHost::new(
-                Arc::new(ownerGetSystemSetting),
-                Arc::new(ownerModifySystemSetting),
-                Arc::new(ownerSystemOperation::<serde_json::Value>),
-            )),
+            Arc::new(
+                AndroidSystemOperationHost::new(
+                    Arc::new(ownerGetSystemSetting),
+                    Arc::new(ownerModifySystemSetting),
+                    Arc::new(ownerSystemOperation::<serde_json::Value>),
+                )
+                .withKeepScreenOn(Arc::new(ownerKeepScreenOn)),
+            ),
         )
     }
     .withTerminalHost(Arc::new(AndroidTerminalHost::new()));

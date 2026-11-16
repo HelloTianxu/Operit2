@@ -100,6 +100,8 @@ pub struct ToolResultMap {
     pub sleep: SleepResultData,
     pub get_system_setting: SystemSettingData,
     pub modify_system_setting: SystemSettingData,
+    #[display(action = "keep_awake", icon = "screen", target = "mechanism")]
+    pub set_keep_screen_on: KeepScreenOnData,
     #[display(action = "notify", icon = "notification", target = "message")]
     pub toast: String,
     #[display(action = "write", icon = "clipboard", target = "text")]

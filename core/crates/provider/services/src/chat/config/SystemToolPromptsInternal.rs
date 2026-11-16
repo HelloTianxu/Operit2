@@ -1167,6 +1167,16 @@ fn internalToolCategoriesEnSource() -> Vec<SystemToolPromptCategory> {
                     "",
                 ),
                 tool(
+                    "set_keep_screen_on",
+                    "Hold the screen on while a task runs so the device does not lock mid-task. The display may still dim. Release the hold when the task finishes.",
+                    "",
+                    vec![
+                        param("enabled", "boolean", "true to hold the screen on, false to release the hold", true, None)
+                    ],
+                    "",
+                    "",
+                ),
+                tool(
                     "install_app",
                     "Request app installation on the device selected by the package path.",
                     "",
@@ -2400,6 +2410,16 @@ fn internalToolCategoriesCnSource() -> Vec<SystemToolPromptCategory> {
                     vec![
                         param("setting", "string", "设置项 key（别名：key）", true, None),
                         param("namespace", "string", "可选，system/secure/global", false, Some("system".to_string()))
+                    ],
+                    "",
+                    "",
+                ),
+                tool(
+                    "set_keep_screen_on",
+                    "任务运行期间保持屏幕不锁屏、不熄屏，屏幕仍可照常变暗。任务结束时传 false 释放。",
+                    "",
+                    vec![
+                        param("enabled", "boolean", "true 表示保持常亮，false 表示释放", true, None)
                     ],
                     "",
                     "",

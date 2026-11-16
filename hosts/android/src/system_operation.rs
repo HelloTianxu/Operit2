@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use operit_host_api::{
     AppListData, AppOperationData, AppUsageTimeResultData, DeviceInfoData, HostError, HostResult,
-    LocationData, NotificationData, OCRLanguage, OCRQuality, SystemNotificationRequest,
-    SystemOperationHost, SystemSettingData,
+    KeepScreenOnData, LocationData, NotificationData, OCRLanguage, OCRQuality,
+    SystemNotificationRequest, SystemOperationHost, SystemSettingData,
 };
 
 pub type AndroidSystemSettingReader =
@@ -12,12 +12,15 @@ pub type AndroidSystemSettingWriter =
     Arc<dyn Fn(&str, &str, &str) -> HostResult<SystemSettingData> + Send + Sync>;
 pub type AndroidPackageOperation =
     Arc<dyn Fn(&str, serde_json::Value) -> HostResult<serde_json::Value> + Send + Sync>;
+/// Applies a screen-awake hold; the owner bridge implements it with a platform wake lock.
+pub type AndroidKeepScreenOnOperation = Arc<dyn Fn(bool) -> HostResult<KeepScreenOnData> + Send + Sync>;
 
 #[derive(Clone)]
 pub struct AndroidSystemOperationHost {
     settingReader: AndroidSystemSettingReader,
     settingWriter: AndroidSystemSettingWriter,
     packageOperation: AndroidPackageOperation,
+    keepScreenOn: Option<AndroidKeepScreenOnOperation>,
     language: Option<String>,
 }
 
@@ -32,6 +35,7 @@ impl AndroidSystemOperationHost {
             settingReader,
             settingWriter,
             packageOperation,
+            keepScreenOn: None,
             language: None,
         }
     }
@@ -47,8 +51,15 @@ impl AndroidSystemOperationHost {
             settingReader,
             settingWriter,
             packageOperation,
+            keepScreenOn: None,
             language: Some(language),
         }
+    }
+
+    /// Attaches the owner's screen-awake implementation without changing the constructor signature.
+    pub fn withKeepScreenOn(mut self, operation: AndroidKeepScreenOnOperation) -> Self {
+        self.keepScreenOn = Some(operation);
+        self
     }
 
     fn packageRequest<T: serde::de::DeserializeOwned>(
@@ -197,6 +208,14 @@ impl SystemOperationHost for AndroidSystemOperationHost {
         let written = target.writeBytes(&bytes);
         std::fs::remove_file(&path).map_err(|error| operit_host_api::HostError::new(error.to_string()))?;
         written
+    }
+
+    /// Holds the screen awake through the owner bridge that owns the platform wake lock.
+    fn setKeepScreenOn(&self, enabled: bool) -> HostResult<KeepScreenOnData> {
+        let operation = self.keepScreenOn.as_ref().ok_or_else(|| {
+            HostError::new("Android keeping the screen on requires the owner wake-lock bridge")
+        })?;
+        operation(enabled)
     }
 
     fn captureScreenshot(&self) -> HostResult<String> {

@@ -1,6 +1,6 @@
 // Generated from operit-plugin-sdk Rust declarations.
 
-import type { AppListData, AppOperationData, AppUsageTimeResultData, BluetoothBleNotificationData, BluetoothBleServicesData, BluetoothBondedDevicesData, BluetoothReadData, BluetoothScanResultData, BluetoothSessionData, BluetoothStateData, BluetoothTransferData, DeviceInfoResultData, HiddenTerminalCommandResultData, LocationData, MusicPlaybackResultData, NotificationData, SleepResultData, SystemSettingData, TerminalCommandResultData, TerminalImplementation, TerminalInfoResultData, TerminalSessionCloseResultData, TerminalSessionCreationResultData, TerminalSessionScreenResultData, TerminalStreamEventData, TerminalType } from "./results";
+import type { AppListData, AppOperationData, AppUsageTimeResultData, BluetoothBleNotificationData, BluetoothBleServicesData, BluetoothBondedDevicesData, BluetoothReadData, BluetoothScanResultData, BluetoothSessionData, BluetoothStateData, BluetoothTransferData, DeviceInfoResultData, HiddenTerminalCommandResultData, LocationData, MusicPlaybackResultData, NotificationData, KeepScreenOnData, SleepResultData, SystemSettingData, TerminalCommandResultData, TerminalImplementation, TerminalInfoResultData, TerminalSessionCloseResultData, TerminalSessionCreationResultData, TerminalSessionScreenResultData, TerminalStreamEventData, TerminalType } from "./results";
 
 /**
  * Provides device settings, application control, notifications, usage, and location services.
@@ -465,6 +465,14 @@ export namespace System {
    * @param namespace - Setting namespace
    */
   function setSetting(setting: string, value: string, namespace?: string): Promise<SystemSettingData>;
+  /**
+   * Hold the screen on while a task runs, so the device does not lock mid-task.
+   *
+   * The display may still dim; only locking and turning off are prevented. Releasing the hold
+   * restores normal screen-off behavior.
+   * @param enabled - True to hold the screen on, false to release the hold
+   */
+  function setKeepScreenOn(enabled: boolean): Promise<KeepScreenOnData>;
   /**
    * Sleep for specified milliseconds
    * @param milliseconds - Milliseconds to sleep

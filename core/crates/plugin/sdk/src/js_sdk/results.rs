@@ -58,6 +58,7 @@ pub enum ToolResultData {
     HttpResponseData(HttpResponseData),
     HttpStreamEventData(HttpStreamEventData),
     SystemSettingData(SystemSettingData),
+    KeepScreenOnData(KeepScreenOnData),
     AppOperationData(AppOperationData),
     AppListData(AppListData),
     AppUsageTimeResultData(AppUsageTimeResultData),
@@ -149,6 +150,7 @@ impl ToolResultData {
             Self::HttpResponseData(data) => data.toString(),
             Self::HttpStreamEventData(data) => data.toString(),
             Self::SystemSettingData(data) => data.toString(),
+            Self::KeepScreenOnData(data) => data.toString(),
             Self::AppOperationData(data) => data.toString(),
             Self::AppListData(data) => data.toString(),
             Self::AppUsageTimeResultData(data) => data.toString(),
@@ -1099,6 +1101,14 @@ pub struct SystemSettingData {
     pub setting: String,
     #[serde(rename = "value")]
     pub value: String,
+}
+#[derive(Clone, Serialize, Deserialize)]
+/// Reports whether the screen-awake hold is active and which mechanism enforces it.
+pub struct KeepScreenOnData {
+    /// Indicates that the display is currently held awake.
+    pub enabled: bool,
+    /// Names the mechanism, such as `screenDim` for a dim-allowing wake lock.
+    pub mechanism: String,
 }
 #[derive(Clone, Serialize, Deserialize)]
 /// Reports the outcome of installing, uninstalling, starting, or stopping an application package.
@@ -2352,6 +2362,23 @@ impl SystemSettingData {
             "Current value of {}.{}: {}",
             self.namespace, self.setting, self.value
         )
+    }
+}
+impl KeepScreenOnData {
+    /// Describes the hold state and the mechanism enforcing it.
+    #[allow(non_snake_case)]
+    pub fn toString(&self) -> String {
+        if self.enabled {
+            format!(
+                "Screen is held on for the running task (mechanism: {}). The display may still dim.",
+                self.mechanism
+            )
+        } else {
+            format!(
+                "Screen hold released (mechanism: {}). Normal screen-off behavior restored.",
+                self.mechanism
+            )
+        }
     }
 }
 impl AppOperationData {

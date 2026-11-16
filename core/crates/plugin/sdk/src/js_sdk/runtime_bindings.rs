@@ -171,6 +171,7 @@ pub const JS_TOOL_BINDINGS: &[JsToolBinding] = &[
     JsToolBinding { namespace: "System", method: "listApps", target: BuiltinToolName::ListInstalledApps, strict_arguments: false, facade: JsToolFacade::Promise, fixed_parameters: &[] },
     JsToolBinding { namespace: "System", method: "sendNotification", target: BuiltinToolName::SendNotification, strict_arguments: false, facade: JsToolFacade::Promise, fixed_parameters: &[] },
     JsToolBinding { namespace: "System", method: "setSetting", target: BuiltinToolName::ModifySystemSetting, strict_arguments: false, facade: JsToolFacade::Promise, fixed_parameters: &[] },
+    JsToolBinding { namespace: "System", method: "setKeepScreenOn", target: BuiltinToolName::SetKeepScreenOn, strict_arguments: false, facade: JsToolFacade::Promise, fixed_parameters: &[] },
     JsToolBinding { namespace: "System", method: "sleep", target: BuiltinToolName::Sleep, strict_arguments: false, facade: JsToolFacade::Promise, fixed_parameters: &[] },
     JsToolBinding { namespace: "System", method: "startApp", target: BuiltinToolName::StartApp, strict_arguments: false, facade: JsToolFacade::Promise, fixed_parameters: &[] },
     JsToolBinding { namespace: "System", method: "stopApp", target: BuiltinToolName::StopApp, strict_arguments: false, facade: JsToolFacade::Promise, fixed_parameters: &[] },

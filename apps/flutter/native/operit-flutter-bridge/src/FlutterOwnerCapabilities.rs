@@ -303,6 +303,13 @@ impl SystemOperationHost for FlutterSystemOperationBridge {
     fn getSystemSetting(&self, namespace: &str, setting: &str) -> HostResult<SystemSettingData> {
         self.host.getSystemSetting(namespace, setting)
     }
+    /// Holds or releases the screen-awake hold through the selected system host.
+    fn setKeepScreenOn(
+        &self,
+        enabled: bool,
+    ) -> HostResult<operit_host_api::KeepScreenOnData> {
+        self.host.setKeepScreenOn(enabled)
+    }
     /// Forwards the file reference and execution timing without resolving native paths.
     fn installApp(&self, source: &dyn operit_host_api::FileSource, timing: operit_host_api::AppInstallTiming) -> HostResult<AppOperationData> {
         self.host.installApp(source, timing)

@@ -579,6 +579,12 @@ fn registerSystemOperationTools(
         BuiltinToolName::GetSystemSetting,
         SystemOperationToolOperation::GetSystemSetting,
     );
+    registerSystemOperationTool(
+        handler,
+        &systemOperationTools,
+        BuiltinToolName::SetKeepScreenOn,
+        SystemOperationToolOperation::SetKeepScreenOn,
+    );
     handler.registerBuiltinTool(
         BuiltinToolName::InstallApp,
         RegisteredToolExecutor::Asynchronous(Box::new(InstallAppToolExecutor {

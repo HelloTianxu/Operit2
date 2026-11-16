@@ -20,7 +20,7 @@ export interface JsonResultData {
 /**
  * Contains every concrete payload returned by the built-in tool runtime.
  */
-export type ToolResultData = UIPageResultData | UIActionResultData | JsonResultData | EdgePortResultData | BooleanResultData | StringResultData | SleepResultData | EnvironmentVariableReadResultData | EnvironmentVariableWriteResultData | ModelsListSummariesResultData | TtsSynthesizeResultData | TtsSpeakResultData | SttTranscribeResultData | TtsListConfigsResultData | TtsGetCurrentConfigIdResultData | TtsSetCurrentConfigIdResultData | ThemeListConfigsResultData | ThemeApplyConfigResultData | IntResultData | BinaryResultData | FilePartContentData | DirectoryListingData | FileContentData | BinaryFileContentData | FileExistsData | FileInfoData | FileOperationData | FileApplyResultData | StorageRequestResultData | WebSocketResultData | HttpResponseData | HttpStreamEventData | SystemSettingData | AppOperationData | AppListData | AppUsageTimeResultData | NotificationData | LocationData | DeviceInfoResultData | ChatServiceStartResultData | ChatCreationResultData | ChatListResultData | ChatFindResultData | AgentStatusResultData | ChatSwitchResultData | ChatTitleUpdateResultData | ChatDeleteResultData | MessageSendResultData | ChatSendMessageResultData | ChatObservationResultData | ChatCancelResultData | ChatReadExtensionResultData | ChatWriteExtensionResultData | ChatDeleteExtensionResultData | ChatCallResultData | ChatMessagesResultData | VisitWebResultData | TerminalInfoResultData | TerminalCommandResultData | TerminalStreamEventData | TerminalObservationResultData | HiddenTerminalCommandResultData | TerminalSessionCreationResultData | TerminalSessionCloseResultData | TerminalSessionScreenResultData | MusicPlaybackResultData | BluetoothStateData | BluetoothBondedDevicesData | BluetoothScanResultData | BluetoothSessionData | BluetoothTransferData | BluetoothReadData | BluetoothBleServicesData | BluetoothBleNotificationData | CatalogReadToolSourcesResultData | MediaRegistrationResultData | FindFilesResultData | GrepResultData;
+export type ToolResultData = UIPageResultData | UIActionResultData | JsonResultData | EdgePortResultData | BooleanResultData | StringResultData | SleepResultData | EnvironmentVariableReadResultData | EnvironmentVariableWriteResultData | ModelsListSummariesResultData | TtsSynthesizeResultData | TtsSpeakResultData | SttTranscribeResultData | TtsListConfigsResultData | TtsGetCurrentConfigIdResultData | TtsSetCurrentConfigIdResultData | ThemeListConfigsResultData | ThemeApplyConfigResultData | IntResultData | BinaryResultData | FilePartContentData | DirectoryListingData | FileContentData | BinaryFileContentData | FileExistsData | FileInfoData | FileOperationData | FileApplyResultData | StorageRequestResultData | WebSocketResultData | HttpResponseData | HttpStreamEventData | SystemSettingData | KeepScreenOnData | AppOperationData | AppListData | AppUsageTimeResultData | NotificationData | LocationData | DeviceInfoResultData | ChatServiceStartResultData | ChatCreationResultData | ChatListResultData | ChatFindResultData | AgentStatusResultData | ChatSwitchResultData | ChatTitleUpdateResultData | ChatDeleteResultData | MessageSendResultData | ChatSendMessageResultData | ChatObservationResultData | ChatCancelResultData | ChatReadExtensionResultData | ChatWriteExtensionResultData | ChatDeleteExtensionResultData | ChatCallResultData | ChatMessagesResultData | VisitWebResultData | TerminalInfoResultData | TerminalCommandResultData | TerminalStreamEventData | TerminalObservationResultData | HiddenTerminalCommandResultData | TerminalSessionCreationResultData | TerminalSessionCloseResultData | TerminalSessionScreenResultData | MusicPlaybackResultData | BluetoothStateData | BluetoothBondedDevicesData | BluetoothScanResultData | BluetoothSessionData | BluetoothTransferData | BluetoothReadData | BluetoothBleServicesData | BluetoothBleNotificationData | CatalogReadToolSourcesResultData | MediaRegistrationResultData | FindFilesResultData | GrepResultData;
 
 /**
  * Captures the UI node and Android surface reached when an automation run finishes.
@@ -579,6 +579,24 @@ export interface SystemSettingData {
   value: string;
   /**
    * Formats the namespaced setting name and its current value.
+   */
+  toString(): string;
+}
+
+/**
+ * Reports whether the screen-awake hold is active and which mechanism enforces it.
+ */
+export interface KeepScreenOnData {
+  /**
+   * Indicates that the display is currently held awake.
+   */
+  enabled: boolean;
+  /**
+   * Names the mechanism, such as `screenDim` for a dim-allowing wake lock.
+   */
+  mechanism: string;
+  /**
+   * Describes the hold state and the mechanism enforcing it.
    */
   toString(): string;
 }

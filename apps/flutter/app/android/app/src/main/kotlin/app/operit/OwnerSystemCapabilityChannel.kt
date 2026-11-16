@@ -25,6 +25,7 @@ import android.media.projection.MediaProjection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -110,6 +111,8 @@ class OwnerSystemCapabilityChannel(
     private var musicVolume: Double = 1.0
     private var musicLoopPlayback: Boolean = false
     private var musicMessage: String = "android music player idle"
+    private val keepScreenOnLock = Any()
+    private var keepScreenOnLockRef: PowerManager.WakeLock? = null
     private val locationReader = AndroidLocationReader(activity)
     private val packageOperations = AndroidPackageOperations(activity)
     private val bluetoothClassicSockets = ConcurrentHashMap<String, BluetoothSocket>()
@@ -308,6 +311,7 @@ class OwnerSystemCapabilityChannel(
                         "get_device_info" -> mapOf(
                             "resultJson" to AndroidHostDeviceInfo.read(activity.applicationContext),
                         )
+                        "set_keep_screen_on" -> systemSetKeepScreenOn(JSONObject(paramsJson))
                         "get_system_setting" -> systemGetSystemSetting(JSONObject(paramsJson))
                         "modify_system_setting" -> systemModifySystemSetting(JSONObject(paramsJson))
                         "android_file_presentation" -> {
@@ -326,6 +330,44 @@ class OwnerSystemCapabilityChannel(
                     result.error("OWNER_SYSTEM_OPERATION_ERROR", error.message, null)
                 }
             }
+        }
+    }
+
+    /**
+     * Holds the display on while a task runs, using a SCREEN_DIM wake lock so the screen may still
+     * dim but never turns off or locks. Idempotent: a repeated request reuses the existing lock.
+     */
+    private fun systemSetKeepScreenOn(params: JSONObject): Map<String, String> {
+        val enabled = params.getBoolean("enabled")
+        synchronized(keepScreenOnLock) {
+            if (enabled) {
+                if (keepScreenOnLockRef == null) {
+                    val powerManager =
+                        activity.applicationContext.getSystemService(Context.POWER_SERVICE)
+                            as PowerManager
+                    val lock =
+                        powerManager.newWakeLock(
+                            PowerManager.SCREEN_DIM_WAKE_LOCK,
+                            "operit:keep_screen_on",
+                        )
+                    // A non-reference-counted lock keeps repeated requests from stacking.
+                    lock.setReferenceCounted(false)
+                    lock.acquire()
+                    keepScreenOnLockRef = lock
+                }
+            } else {
+                keepScreenOnLockRef?.let { lock ->
+                    if (lock.isHeld) lock.release()
+                }
+                keepScreenOnLockRef = null
+            }
+            val held = keepScreenOnLockRef?.isHeld == true
+            return mapOf(
+                "resultJson" to JSONObject()
+                    .put("enabled", held)
+                    .put("mechanism", if (held) "screenDim" else "none")
+                    .toString(),
+            )
         }
     }
 

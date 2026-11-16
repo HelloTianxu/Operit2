@@ -2611,6 +2611,16 @@ pub struct SystemSettingData {
     pub value: String,
 }
 
+/// Reports how the host keeps the screen awake, so callers can explain the mechanism honestly.
+///
+/// A `screenDim` mechanism holds the display on while still allowing it to dim; a
+/// `screenTimeout` mechanism is a weaker fallback that only extends the idle timeout.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KeepScreenOnData {
+    pub enabled: bool,
+    pub mechanism: String,
+}
+
 /// Installation request progress; opening an installer does not mean installation completed.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -3350,6 +3360,16 @@ pub trait SystemOperationHost: Send + Sync {
         value: &str,
     ) -> HostResult<SystemSettingData>;
     fn getSystemSetting(&self, namespace: &str, setting: &str) -> HostResult<SystemSettingData>;
+    /// Holds the screen on while a task runs, leaving normal dimming in place.
+    ///
+    /// Implementations must release the hold when `enabled` is false and be idempotent, because a
+    /// task may finish after a crash left the hold engaged.
+    fn setKeepScreenOn(&self, enabled: bool) -> HostResult<KeepScreenOnData> {
+        let _ = enabled;
+        Err(HostError::new(
+            "Keeping the screen on is not supported by this host",
+        ))
+    }
     /// Installs a file reference, resolving its native location inside the platform provider.
     fn installApp(&self, source: &dyn FileSource, timing: AppInstallTiming) -> HostResult<AppOperationData>;
     fn uninstallApp(&self, packageName: &str) -> HostResult<AppOperationData>;
