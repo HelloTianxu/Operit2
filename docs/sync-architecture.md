@@ -1,6 +1,6 @@
 # Space 持久化同步
 
-同一 Space 内，具备 `storage.provide` 且提供 Core 存储服务的节点交换持久化操作与 Blob。配对、成员资格、路由可达性和存储授权分别校验；Edge 的控制状态边界见 [Edge 架构](edge-architecture.md)。
+同一 Space 内，具备 `storage.provide` 且提供 Core 存储服务的节点交换持久化操作与 Blob。配对、成员资格、路由可达性和存储授权分别校验；Edge 的控制状态边界见 [Edge 架构](../edge/docs/architecture.md)。
 
 ## 职责与数据路径
 

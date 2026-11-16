@@ -2,10 +2,12 @@
 
 2026-10-27 21:24:14—21:24:37（Asia/Shanghai）采集。使用用户重新编译并启动的 **PID 78568**，iPhone 18 Pro Max / iOS 27 模拟器，Apple M5 主机，Flutter debug。连接现有 Flutter VM 和配置，通过真实业务入口创建可见聊天并发送一条消息，实际界面参与流式接收。没有更换模型、应用配置或 API key。
 
-- [交互式火焰图及 CPU 曲线](assets/performance-2026-10-27/message-retest-78568/iphone-flamegraphs.html)
-- [Speedscope 堆栈](assets/performance-2026-10-27/message-retest-78568/iphone-profiles.speedscope.json)
-- [CPU 时间、线程及源码热点原始汇总](assets/performance-2026-10-27/message-retest-78568/iphone-cpu-stacks.json)
+- 交互式火焰图及 CPU 曲线：`message-retest-78568/iphone-flamegraphs.html`
+- Speedscope 堆栈：`message-retest-78568/iphone-profiles.speedscope.json`
+- CPU 时间、线程及源码热点原始汇总：`message-retest-78568/iphone-cpu-stacks.json`
 - [上一轮报告](performance-ios-2026-10-27.md)
+
+本轮生成的交互式产物未提交进仓库（体积大且可重新生成）。
 
 ## 实测 CPU 时间
 

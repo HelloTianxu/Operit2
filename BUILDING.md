@@ -577,7 +577,8 @@ Windows app release build:
 fvm flutter build windows --release --no-pub --build-name 2.0.0 --build-number 1
 ```
 
-Android release build requires signing values in:
+Publishing an Android release (CI, or `build_flutter_android.py` run directly) requires
+signing values in:
 
 ```text
 tools/release/secrets/android-signing.properties
@@ -589,6 +590,13 @@ Keep the Android release keystore and properties outside git and back them up:
 tools/release/secrets/operit2-release.keystore
 tools/release/secrets/android-signing.properties
 ```
+
+`tools/android-container/build-inside.sh` deliberately **overwrites**
+`tools/release/secrets/android-signing.properties` with a throwaway debug keystore
+(`tools/release/work/android-container-debug.keystore`) on every run, so container builds
+are self-signed and reinstallable. Do not expect a container build to carry the release
+signature; delete `tools/release/work/` only when you accept that the signature changes
+and the app must be uninstalled before reinstalling.
 
 ### Local Windows Android Build
 
@@ -650,6 +658,15 @@ The filename uses the full release version
 (for example, `2.0.0-preview.16`), including any prerelease identifiers.
 The NDK is provisioned automatically by the Android Gradle Plugin; `rustup target add aarch64-linux-android`
 is still required for the Rust bridge.
+
+The Android release build type is **debuggable**, so `adb run-as app.operit` can read the
+app's private data; the AOT build itself is unchanged. This makes AGP name the APK
+`-debug` while Flutter's tooling expects `-release`, so `flutter build apk` exits non-zero
+even on success — `build_flutter_android.py` treats that exit as advisory.
+
+For the container build used on macOS (shared caches, signing, debuggable consequences,
+troubleshooting), see [Android container build](docs/android-container-build.md), which is
+the authoritative source for that path.
 
 Android Gradle selects the Rust bridge profile from the Android build variant:
 `debug` uses Cargo's `dev` profile and its `target/<rust-target>/debug` output;

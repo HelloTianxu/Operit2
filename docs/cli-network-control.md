@@ -111,7 +111,7 @@ Relay 具备查看成员设备和网络中继能力；Edge 具备查看成员设
 聊天读写不再单独设置权限，仍通过已认证的空间成员关系和 Binding 路由。
 User 和 Relay 默认具有 `storage.provide`，Edge 默认没有；审计和其他能力也可
 通过自定义身份分配。权限角色不表示节点实际实现了相应服务，设备侧职责见
-[Edge 架构](edge-architecture.md)。
+[Edge 架构](../edge/docs/architecture.md)。
 
 ```text
 control show

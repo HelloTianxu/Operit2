@@ -85,7 +85,7 @@ Host descriptor 提供平台、权限等级、隔离状态、能力、工作区�
 | [Host API](../core/crates/foundation/host-api/README.md) | Host 描述、能力和授权接口 |
 | [AIToolHandler](../core/crates/tool/services/src/tools/AIToolHandler.rs) | 模式、访问效果、工作区和批准检查 |
 | [ToolExecutionManager](../core/crates/tool/services/src/ToolExecutionManager.rs) | invocation 流转与执行上下文 |
-| [PathMapper](../core/crates/tool/services/src/files/PathMapper.rs) | VFS 解析和结构化路径归属 |
+| [PathMapper](../core/crates/foundation/vfs/src/PathMapper.rs) | VFS 解析和结构化路径归属 |
 | [Peer dispatch](../core/crates/node/runtime/src/peer/dispatch.rs) | 认证通道准入 |
 | [平台 Host](../hosts/README.md) | 系统授权与具体能力执行 |
 

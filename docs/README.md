@@ -9,7 +9,7 @@
 | [CoreNode、Space 与 Binding](core-node-space-binding-architecture.md) | 节点、空间、执行位置和跨设备续跑 |
 | [Link 与访问边界](link-access-architecture.md) | Call / Watch / Push、认证与传输职责 |
 | [路由与分发](device-net-routing-distribution.md) | 链路测量、加权路由和共享 Watch |
-| [Edge](edge-architecture.md) | 受限设备的成员、配置与服务边界 |
+| [Edge](../edge/docs/architecture.md) | 受限设备的成员、配置与服务边界 |
 | [权限与 AI 能力](permission-access-architecture.md) | 系统权限、AI 模式、工具批准和工作区检查 |
 
 源码结构以 [Core 领域结构](../core/crates/README.md) 和 [crate 边界](../core/CRATE_BOUNDARIES.md) 为准。
@@ -54,6 +54,7 @@ Compose 的执行模型与二进制协议维护在 [Compose runtime](../core/cra
 | [Android Root](android-root-shell.md) | 授权、执行模式与命令生命周期 |
 | [Android 模块运行](android-module-architecture.md) | 模块应用入口、目录构建、共享 Core/Dart 与 Android Host 安装链 |
 | [Android 定时事件](android-host-event-schedules.md) | 调度、交接与失败诊断 |
+| [Android 容器构建](android-container-build.md) | 本地容器构建、缓存、签名与可调试产物 |
 
 ## 桥接与性能
 

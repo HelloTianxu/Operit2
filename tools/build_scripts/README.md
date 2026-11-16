@@ -275,7 +275,11 @@ source and writes `RUSTY_V8_ARCHIVE`, `RUSTY_V8_ARCHIVE_SHA256` and
 `RUSTY_V8_SRC_BINDING_PATH` into an env file; the Cargo compile tasks apply it.
 Library, bindings and GN arguments are verified against a configuration
 manifest and SHA-256 hashes before reuse under
-`tools/release/work/android-v8/<v8-version>/<rust-target>/`.
+`tools/release/work/android-v8/<v8-version>/<rust-target>/`. The container build
+symlinks that directory to its shared cache (`/cache/android-v8`); reproducing the
+container by hand requires the same link, otherwise every run rebuilds V8 from
+source. Because `android_ndk_version` is part of the cache identity, switching the
+NDK invalidates the cache.
 
 Unlike iOS, Android keeps the JIT with WebAssembly enabled. The sandbox,
 pointer compression and cppgc caged heap stay disabled to keep both mobile
@@ -300,7 +304,9 @@ llvm@23 lld@23`); on Windows, set `OPERIT_LIBCLANG_DIR`
 to a directory containing `libclang.dll` (the Gradle build already does).
 The helper also provisions the pinned `gn` and `ninja` under the cache and
 passes them via `GN`/`NINJA`, because the crate's own downloader opens raw
-connections that bypass proxy environment settings. `armv7-linux-androideabi`
+connections that bypass proxy environment settings. All helper downloads (CIPD
+tools, ICU data, fallback NDK) retry with backoff and validate the advertised
+`Content-Length`, so a truncated response no longer aborts the build. `armv7-linux-androideabi`
 is not supported: rusty_v8's build script maps only
 the x86_64 and aarch64 Android targets. Build/cache checks:
 

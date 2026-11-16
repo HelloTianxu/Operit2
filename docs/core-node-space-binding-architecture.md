@@ -76,7 +76,7 @@ Space 只负责三件事：
 
 Space 不表达执行位置，也不表达数据归属。业务副本由具备 `storage.provide` 且实际
 提供 Core 存储服务的成员保存和同步。Edge 的控制状态、自身配置和业务使用边界见
-[Edge 架构](edge-architecture.md)。
+[Edge 架构](../edge/docs/architecture.md)。
 
 ### 2.1 发现与加入
 
@@ -194,7 +194,7 @@ Edge 保留设备身份、配对凭证和必要的成员/权限/审批本地状�
 副本，亦不自动生成业务同步日志、设备索引或同步时钟。旧 Edge 日志只有在确认
 全部属于成员展示元数据和权限命令、且权限已持久保存后，才允许精确退役；遇到
 未知或业务记录不自动删除。显示聊天的按需读取/内存缓存不等于申请存储角色。
-受限 Edge 的后续职责收窄见 [Core 托管入口方案](edge-core-entry-protocol.md)。当前同步已
+受限 Edge 的后续职责收窄见 [Core 托管入口方案](../edge/docs/core-entry-protocol.md)。当前同步已
 接入版本/报文上限协商、endpoint 逐条权限导出和发送预检，仍声明 `localReplay`。
 托管授权与权威移交尚未完成，本节所述控制交换和本地校验仍然适用。
 

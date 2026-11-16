@@ -44,7 +44,7 @@ Router 负责目标选择、Space 权限和转发。Peer runtime 负责身份、
 `operit-proxy-edge` 提供类型化服务投影，地址由 `operit-edge-contract` 共享。
 完整 CoreNode 拥有身份、Space、持久化及 Agent/Chat 运行时；Edge 提供设备服务及
 相应的 Space 控制能力，不等同于完整 CoreNode。设备原生业务、配置与宿主插件的
-职责见 [Edge 架构](edge-architecture.md)。
+职责见 [Edge 架构](../edge/docs/architecture.md)。
 
 ## 2. 标准 Link 的三个操作族
 

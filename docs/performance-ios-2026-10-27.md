@@ -4,9 +4,11 @@
 
 采样对象是用户已启动的 **iPhone 18 Pro Max / iOS 27 模拟器**，进程 PID 31239。沿用正在运行的 `lib/main.dart` 和已有 `deepseek-flash` 配置，通过 Flutter VM 的 WebSocket 调试接口触发业务；同步使用 Instruments Time Profiler 抓取原生线程。实际聊天界面参与了流式接收与渲染。
 
-- [交互式火焰图与 CPU 曲线](assets/performance-2026-10-27/iphone-flamegraphs.html)：切换阶段、切换 Native / Dart、搜索、点击矩形放大。
-- [Speedscope 格式堆栈](assets/performance-2026-10-27/iphone-profiles.speedscope.json)：包含各阶段的原生与 Dart 采样。
-- [CPU、线程占比和源码热点数据](assets/performance-2026-10-27/iphone-cpu-stacks.json)。
+本轮生成的交互式产物未提交进仓库（体积大且可重新生成），文件名如下：
+
+- `iphone-flamegraphs.html`：交互式火焰图与 CPU 曲线，切换阶段、切换 Native / Dart、搜索、点击矩形放大。
+- `iphone-profiles.speedscope.json`：Speedscope 格式堆栈，包含各阶段的原生与 Dart 采样。
+- `iphone-cpu-stacks.json`：CPU、线程占比和源码热点数据。
 
 原始 Instruments 文件保存在本机 `/tmp/operit-performance-20261027/iphone-business-stacks.trace`，原始 Dart 样本为同目录 `current-dart-*.json`。不把包含大量重复符号信息的原始文件复制到仓库。
 
