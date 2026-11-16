@@ -225,6 +225,7 @@ android {
             signingConfig = signingConfigs.getByName("release")
             // Keep the optimized release build but make it debuggable, so `adb run-as` can read
             // the app's private data (sessions, databases) without a root shell.
+            // See the buildMode override below: debuggable alone would select JIT.
             isDebuggable = true
             proguardFiles("proguard-rules.pro")
             if (operitExternalRuntime) {
@@ -239,6 +240,27 @@ android {
         }
     }
 
+}
+
+// Flutter's Gradle plugin maps a debuggable build type to the "debug" build mode
+// (FlutterPluginUtils.buildModeFor), which compiles Dart to JIT snapshots instead of an AOT
+// snapshot. This fork publishes release engine artifacts only, so a debuggable release paired
+// the debug Dart bytecode with the release engine and crashed on launch: the APK carried
+// `kernel_blob.bin` and no `lib/<abi>/libapp.so`.
+//
+// Pin the Flutter build mode to release for release tasks. That keeps Dart AOT-compiled and
+// matched to the release engine while the Android build stays debuggable, so `run-as`,
+// attachable native debugging and readable app-private data all remain available.
+afterEvaluate {
+    tasks.withType<com.flutter.gradle.tasks.BaseFlutterTask>().configureEach {
+        if (name.contains("Release")) {
+            // doFirst runs after every configuration action, including the plugin's own
+            // assignment, so this cannot be overwritten back to "debug".
+            doFirst("forceReleaseBuildMode") {
+                buildMode = "release"
+            }
+        }
+    }
 }
 
 androidComponents {

@@ -105,6 +105,19 @@ def verify_android_runtime_assets(apk_path: Path, abi: str) -> None:
         raise RuntimeError(
             f"Android APK is missing required runtime assets: {sorted(missing_assets)} ({apk_path})"
         )
+    # A release APK must carry an AOT snapshot. Flutter writes it as lib/<abi>/libapp.so, and a
+    # debuggable release silently compiles Dart to JIT instead, leaving `kernel_blob.bin` behind
+    # and crashing at launch against the release engine. Catch that here rather than on device.
+    with zipfile.ZipFile(apk_path) as archive:
+        names = set(archive.namelist())
+    aot_library = f"lib/{abi}/libapp.so"
+    if aot_library not in names:
+        has_jit = "assets/flutter_assets/kernel_blob.bin" in names
+        raise RuntimeError(
+            f"Android APK is missing the AOT snapshot {aot_library}"
+            f"{' (it carries JIT kernel_blob.bin instead, so Flutter ran in debug mode)' if has_jit else ''}"
+            f" ({apk_path})"
+        )
 
 
 # Publishes the APK with the shared full release version in its filename.
