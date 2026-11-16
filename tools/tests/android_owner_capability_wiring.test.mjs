@@ -67,11 +67,18 @@ test('screen-awake hold is exposed to plugins and the AI tool catalog', () => {
   const toolTypes = source('core/crates/plugin/sdk/src/js_sdk/tool_types.rs');
   const prompts = source('core/crates/provider/services/src/chat/config/SystemToolPromptsInternal.rs');
   const toolPackage = source('plugins/packages/buildin/system_tools.ts');
+  const keepScreenPackage = source('plugins/packages/buildin/keep_screen_on/main.js');
+  const keepScreenManifest = source('plugins/packages/buildin/keep_screen_on/manifest.json');
 
   assert.match(sdkSystem, /fn setKeepScreenOn\(&self, enabled: bool\) -> JsFuture<KeepScreenOnData>/);
   assert.match(bindings, /method: "setKeepScreenOn", target: BuiltinToolName::SetKeepScreenOn/);
   assert.match(toolTypes, /pub set_keep_screen_on: KeepScreenOnData/);
   assert.match(toolPackage, /exports\.set_keep_screen_on/);
+  // The keep-screen package is a ToolPkg directory archive: only a ToolPkg has its main script
+  // executed, so a hook in a standalone package would never be registered.
+  assert.match(keepScreenManifest, /"main": "main\.js"/);
+  assert.match(keepScreenPackage, /exports\.registerToolPkg = function registerToolPkg/);
+  assert.match(keepScreenPackage, /registerChatRuntimeHook/);
   // Both prompt languages must list the tool, or the model never sees it.
   const listed = prompts.match(/"set_keep_screen_on"/g) || [];
   assert.equal(listed.length, 2, 'set_keep_screen_on must appear in both prompt catalogs');

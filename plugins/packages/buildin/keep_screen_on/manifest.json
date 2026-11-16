@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "toolpkg_id": "com.operit.keep_screen_on",
+  "version": "0.1.0",
+  "api_version": "2.0.0",
+  "main": "main.js",
+  "display_name": {
+    "zh": "任务运行保持屏幕常亮",
+    "en": "Keep screen on while running"
+  },
+  "description": {
+    "zh": "Agent 任务运行期间保持屏幕不锁屏、不熄屏；屏幕仍可照常变暗。任务结束自动释放。",
+    "en": "Hold the screen on while an agent task runs so it does not lock or turn off; the display may still dim. Released automatically when the task ends."
+  },
+  "enabled_by_default": true,
+  "installation_scope": "device"
+}

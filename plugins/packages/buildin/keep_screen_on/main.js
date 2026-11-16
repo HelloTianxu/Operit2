@@ -8,9 +8,6 @@
     },
     "enabledByDefault": true,
     "category": "System",
-    "chatRuntimeHooks": [
-        { "id": "keep-screen-on", "function": "onChatRuntimeStateChanged" }
-    ],
     "tools": [
         { "name": "keep_screen_on_status", "display": {"label": {"zh": "查询常亮状态", "en": "Keep-screen-on status"}, "icon": "screen"}, "description": { "zh": "查看当前是否因任务运行而保持屏幕常亮。", "en": "Report whether the screen is currently held on for a running task." }, "parameters": [] }
     ]
@@ -23,21 +20,24 @@
  * The host provides the hold through Tools.System.setKeepScreenOn, which uses a dim-allowing
  * wake lock: the screen may dim but never turns off or locks. This package decides *when* to
  * hold and release, driven by chat runtime state changes rather than a fixed timer.
+ *
+ * This is a ToolPkg directory archive rather than a standalone `.js` package because only a
+ * ToolPkg has its main script executed: the host runs `registerToolPkg`, which is where the
+ * runtime hook is bound. A standalone package has its METADATA read but its script never runs,
+ * so a hook registered there would silently never fire.
  */
 
-export {};
-
 /** Remembers the last state applied, so repeated events do not re-acquire the same hold. */
-let lastApplied: boolean | null = null;
+let lastApplied = null;
 /** Records the last observed runtime state, for the status tool. */
-let lastState: string | null = null;
+let lastState = null;
 /** Records the most recent host-reported mechanism, for the status tool. */
-let lastMechanism: string | null = null;
+let lastMechanism = null;
 /** Records why the last transition happened, for the status tool. */
-let lastReason: string | null = null;
+let lastReason = null;
 
 /** Applies the requested hold only when the desired state actually changes. */
-async function applyHold(enabled: boolean, reason: string): Promise<void> {
+async function applyHold(enabled, reason) {
     if (lastApplied === enabled) return;
     try {
         const result = await Tools.System.setKeepScreenOn(enabled);
@@ -59,10 +59,10 @@ async function applyHold(enabled: boolean, reason: string): Promise<void> {
  * turns, tool execution, and plan execution. Terminal states release the hold so normal
  * screen-off behavior returns as soon as the task stops.
  */
-async function onChatRuntimeStateChanged(event: any): Promise<void> {
+async function onChatRuntimeStateChanged(event) {
     const payload = event && event.payload ? event.payload : {};
-    const state: string = payload.state ?? "unknown";
-    const isActive: boolean = payload.isActive === true;
+    const state = payload.state ?? "unknown";
+    const isActive = payload.isActive === true;
     lastState = state;
 
     if (isActive) {
@@ -77,7 +77,7 @@ async function onChatRuntimeStateChanged(event: any): Promise<void> {
 }
 
 /** Reports the current hold and the last observed runtime state. */
-async function keep_screen_on_status(): Promise<ToolResponse> {
+async function keep_screen_on_status() {
     const state = lastState ?? "unknown";
     if (lastApplied === true) {
         return {
@@ -100,17 +100,18 @@ async function keep_screen_on_status(): Promise<ToolResponse> {
     };
 }
 
-/** Registers the runtime hook and reports that the package is ready. */
-async function main(): Promise<void> {
-    // The declaration above is what the host records; this call binds the live callback.
+/**
+ * Registers this package's runtime hook.
+ *
+ * The host executes this export while loading the ToolPkg, so the callback is bound to the live
+ * chat runtime before any state change arrives.
+ */
+exports.registerToolPkg = function registerToolPkg() {
     ToolPkg.registerChatRuntimeHook({
         id: "keep-screen-on",
         function: onChatRuntimeStateChanged,
     });
-    complete({ success: true, message: "任务运行保持屏幕常亮插件已加载" });
-}
+    return true;
+};
 
-exports.main = main;
-exports.onChatRuntimeStateChanged = onChatRuntimeStateChanged;
-exports.keep_screen_on_status = (params: Record<string, never>) =>
-    completeTool(keep_screen_on_status, params);
+exports.keep_screen_on_status = (params) => completeTool(keep_screen_on_status, params);
